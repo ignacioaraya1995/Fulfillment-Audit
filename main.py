@@ -3,9 +3,9 @@ import os
 import glob
 import pandas as pd
 
-SMS_GOAL    = 120000
-CC_GOAL     = 100000
-DM_GOAL     = 30000
+SMS_GOAL    = 20000
+CC_GOAL     = 10000
+DM_GOAL     = 20000
 
 def validate_row_count(excel_file, clients_goal):
     num_rows = len(pd.read_excel(excel_file))
