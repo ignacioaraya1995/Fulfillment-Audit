@@ -3,9 +3,9 @@ import os
 import glob
 import pandas as pd
 
-SMS_GOAL    = 20000
-CC_GOAL     = 10000
-DM_GOAL     = 20000
+SMS_GOAL    = int(input("SMS: "))
+CC_GOAL     = int(input("Cold Call: "))
+DM_GOAL     = int(input("Direct Mail: "))
 
 def validate_row_count(excel_file, clients_goal):
     num_rows = len(pd.read_excel(excel_file))
@@ -90,7 +90,7 @@ def start(category, goal, folder_path="fulfillments"):
         excel_files = glob.glob(os.path.join(client_folder_path, "*.xlsx"))
         for excel_file in excel_files:
             if category in excel_file:
-                # validate_row_count(excel_file, goal)
+                validate_row_count(excel_file, goal)
                 validate_owner_columns(excel_file)
                 validate_duplicates(excel_file)
                 validate_blank_addresses(excel_file)
