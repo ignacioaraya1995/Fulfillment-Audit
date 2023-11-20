@@ -2,6 +2,8 @@
 import os
 import glob
 import pandas as pd
+from tabulate import tabulate
+
 
 SMS_GOAL    = int(input("SMS: "))
 CC_GOAL     = int(input("Cold Call: "))
@@ -79,6 +81,73 @@ def validate_columns_exist(excel_file, category):
         exists = col in df.columns
         print(f"{file_name}: {col} Exists: {'PASSED' if exists else 'FAILED'}")
 
+def compare_addresses(excel_file):
+    # Read the Excel file
+    try:
+        data = pd.read_excel(excel_file)
+    except Exception as e:
+        print("Error reading")
+        return f"Error reading the Excel file: {e}"
+
+    # Check if necessary columns are present
+    required_columns = ['ADDRESS', 'ZIP', 'MAILING ADDRESS', 'MAILING ZIP']
+    if not all(column in data.columns for column in required_columns):
+        print("The required columns are not present in the Excel file.")
+        return
+
+    # Convert zip codes to strings
+    data['ZIP'] = data['ZIP'].astype(str)
+    data['MAILING ZIP'] = data['MAILING ZIP'].astype(str)
+
+    # Compare addresses and zips
+    data['Address Match'] = (data['ADDRESS'] == data['MAILING ADDRESS']) & (data['ZIP'] == data['MAILING ZIP'])
+
+    # Calculate the percentage
+    match_percentage = data['Address Match'].mean() * 100
+
+    # Alert if match percentage is higher than 90%
+    if match_percentage > 90:
+        print("Alert: Match percentage is higher than 90%. (between property addresses and mailing addresses)")
+
+def categorize_property_values_by_type(excel_file):
+    # Read the Excel file
+    try:
+        data = pd.read_excel(excel_file)
+    except Exception as e:
+        print("Error reading")
+        return f"Error reading the Excel file: {e}"
+
+    # Check if the required columns are present
+    if 'TOTAL VALUE' not in data.columns or 'PROPERTY TYPE' not in data.columns:
+        print("Required columns are not present in the Excel file.")
+        return
+
+    # Define value ranges
+    ranges = [0, 1, 25000, 50000, 100000, 150000, 200000, 250000, 300000, 350000, 
+              400000, 500000, 600000, 750000, 1000000, 1500000, 2000000]
+
+    # Initialize a DataFrame to hold the categorized counts
+    categorized_counts = pd.DataFrame(columns=['Range'] + list(data['PROPERTY TYPE'].unique()))
+
+    for i, upper_bound in enumerate(ranges):
+        if i == 0:
+            label = "Unknown"
+        elif i == len(ranges) - 1:
+            label = f"${upper_bound:,}+"
+        else:
+            label = f"${ranges[i - 1]:,} - ${upper_bound:,}"
+
+        row = {'Range': label}
+        for prop_type in categorized_counts.columns[1:]:
+            count = data[(data['PROPERTY TYPE'] == prop_type) & 
+                         (data['TOTAL VALUE'] > ranges[i - 1]) & 
+                         (data['TOTAL VALUE'] <= upper_bound)].shape[0]
+            row[prop_type] = count
+        categorized_counts = pd.concat([categorized_counts, pd.DataFrame([row])], ignore_index=True)
+
+    # Display results in a table format
+    print(tabulate(categorized_counts, headers='keys', tablefmt='pretty', showindex=False))
+
 def start(category, goal, folder_path="fulfillments"):
     print("starting category: {}".format(category))
     if not os.path.exists(folder_path):
@@ -90,11 +159,14 @@ def start(category, goal, folder_path="fulfillments"):
         excel_files = glob.glob(os.path.join(client_folder_path, "*.xlsx"))
         for excel_file in excel_files:
             if category in excel_file:
-                validate_row_count(excel_file, goal)
+                print("Excel Name: ", excel_file)
+                # validate_row_count(excel_file, goal)
                 validate_owner_columns(excel_file)
                 validate_duplicates(excel_file)
                 validate_blank_addresses(excel_file)
                 validate_zero_score(excel_file)
+                compare_addresses(excel_file)
+                categorize_property_values_by_type(excel_file)
                 # validate_columns_exist(excel_file, category)
 
 if __name__ == "__main__":
