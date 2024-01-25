@@ -118,7 +118,7 @@ def categorize_property_values_by_type(excel_file):
         return f"Error reading the Excel file: {e}"
 
     # Check if the required columns are present
-    if 'TOTAL VALUE' not in data.columns or 'PROPERTY TYPE' not in data.columns:
+    if 'ESTIMATED MARKET VALUE' not in data.columns or 'PROPERTY TYPE' not in data.columns:
         print("Required columns are not present in the Excel file.")
         return
 
@@ -140,8 +140,8 @@ def categorize_property_values_by_type(excel_file):
         row = {'Range': label}
         for prop_type in categorized_counts.columns[1:]:
             count = data[(data['PROPERTY TYPE'] == prop_type) & 
-                         (data['TOTAL VALUE'] > ranges[i - 1]) & 
-                         (data['TOTAL VALUE'] <= upper_bound)].shape[0]
+                         (data['ESTIMATED MARKET VALUE'] > ranges[i - 1]) & 
+                         (data['ESTIMATED MARKET VALUE'] <= upper_bound)].shape[0]
             row[prop_type] = count
         categorized_counts = pd.concat([categorized_counts, pd.DataFrame([row])], ignore_index=True)
 
@@ -160,7 +160,7 @@ def start(category, goal, folder_path="fulfillments"):
         for excel_file in excel_files:
             if category in excel_file:
                 print("Excel Name: ", excel_file)
-                # validate_row_count(excel_file, goal)
+                validate_row_count(excel_file, goal)
                 validate_owner_columns(excel_file)
                 validate_duplicates(excel_file)
                 validate_blank_addresses(excel_file)
